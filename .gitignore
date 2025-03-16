@@ -1,0 +1,16 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore virtual environment
+venv/
+env/
+
+# Ignore environment variables
+.env  
+
+# Ignore database migrations cache (if using alembic)
+alembic/versions/
+
+# Ignore logs
+*.log
