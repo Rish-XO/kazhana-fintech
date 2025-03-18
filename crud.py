@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 from models import MutualFund, FundAllocation, FundOverlap
 from typing import List, Dict, Any, Optional
-from datetime import date, timedelta
+from datetime import date, timedelta,datetime
 import decimal
 
 # Get all mutual funds
@@ -74,51 +74,52 @@ async def get_investment_overview(db: AsyncSession) -> Dict[str, Any]:
         },
     }
 
-def calculate_irr(initial_value: float, returns_percentage: float, days: int) -> float:
+async def get_performance_summary(db: AsyncSession, timeframe: str) -> Dict[str, Any]:
     """
-    Estimate investment value over time using a simplified IRR calculation.
-    Since we lack daily NAV history, we assume exponential growth.
+    Returns investment growth based on fund purchase date.
+    Uses timeframes: "1M", "3M", "6M", "1Y", "3Y", "MAX".
     """
-    if days <= 0:
-        return initial_value
-    growth_factor = (1 + (returns_percentage / 100)) ** (days / 365)  # Annualized compounding
-    return initial_value * growth_factor
-
-async def get_performance_summary(db: AsyncSession) -> Dict[str, Any]:
     # Fetch total initial investment value
     initial_value_query = await db.execute(select(func.sum(MutualFund.amount_invested)))
-    initial_value = initial_value_query.scalar() or decimal.Decimal(0)
+    initial_value = initial_value_query.scalar() or 0.0
+    initial_value = float(initial_value)  # Convert Decimal to float
 
-    # Fetch total current investment value (based on returns)
+    # Get the oldest purchase date
+    oldest_date_query = await db.execute(select(func.min(MutualFund.investment_date)))
+    oldest_date = oldest_date_query.scalar()
+    if not oldest_date:
+        return {"message": "No investments found."}
+
+    # Calculate starting date based on timeframe
+    today = datetime.today().date()
+    timeframe_map = {
+        "1M": today - timedelta(days=30),
+        "3M": today - timedelta(days=90),
+        "6M": today - timedelta(days=180),
+        "1Y": today - timedelta(days=365),
+        "3Y": today - timedelta(days=3 * 365),
+        "MAX": oldest_date,
+    }
+    start_date = timeframe_map.get(timeframe, oldest_date)
+
+    # Simulate performance growth using investment date
+    history = []
+    days_range = (today - start_date).days
+    for i in range(0, days_range, max(days_range // 7, 1)):  # 7 data points
+        date = start_date + timedelta(days=i)
+        growth_factor = 1 + (i / 1000)  # Simulated growth
+        simulated_value = initial_value * growth_factor  # Fix applied here
+        history.append({"date": date.strftime("%d %b"), "value": round(simulated_value, 2)})
+
+    # Fetch current investment value
     current_value_query = await db.execute(
         select(func.sum(MutualFund.amount_invested * (1 + MutualFund.returns_percentage / 100)))
     )
-    current_value = current_value_query.scalar() or decimal.Decimal(0)
-
-    # Convert Decimal to float
-    initial_value = float(initial_value)
-    current_value = float(current_value)
-
-    # Get the oldest investment date
-    oldest_investment_date_query = await db.execute(select(func.min(MutualFund.investment_date)))
-    oldest_investment_date = oldest_investment_date_query.scalar() or date.today()
-
-    today = date.today()
-    days_since_first_investment = (today - oldest_investment_date).days
-
-    # Generate estimated historical performance data
-    history = []
-    days_range = 30  # Show last 30 days
-    for days_ago in range(days_range, -1, -5):  # Generate every 5 days
-        past_date = today - timedelta(days=days_ago)
-        estimated_value = calculate_irr(initial_value, (current_value - initial_value) / initial_value * 100, days_since_first_investment - days_ago)
-        history.append({
-            "date": past_date.strftime("%d %b"),  # Format as "DD Mon"
-            "value": round(estimated_value, 2)
-        })
+    current_value = current_value_query.scalar() or 0.0
+    current_value = float(current_value)  # Convert Decimal to float
 
     return {
         "current_investment_value": round(current_value, 2),
         "initial_investment_value": round(initial_value, 2),
-        "history": history
+        "history": history,
     }
