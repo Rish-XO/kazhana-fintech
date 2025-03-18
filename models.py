@@ -24,6 +24,8 @@ class FundAllocation(Base):
     stock = Column(String, nullable=False)
     stock_percentage = Column(Numeric(5,2), nullable=False)
     market_cap = Column(String, nullable=False)
+    sector_amount = Column(Numeric(15,2), nullable=True)  # Added sector amount column
+    sub_sector = Column(String, nullable=True)  # Added sub-sector column
 
 class FundOverlap(Base):
     __tablename__ = "fund_overlaps"
@@ -31,4 +33,13 @@ class FundOverlap(Base):
     id = Column(Integer, primary_key=True, index=True)
     fund_1_id = Column(Integer, ForeignKey("mutual_funds.id"), nullable=False)
     fund_2_id = Column(Integer, ForeignKey("mutual_funds.id"), nullable=False)
+    overlap_percentage = Column(Numeric(5,2), nullable=False)
+
+class FundStockOverlap(Base):
+    __tablename__ = "fund_stock_overlaps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fund_1_id = Column(Integer, ForeignKey("mutual_funds.id"), nullable=False)
+    fund_2_id = Column(Integer, ForeignKey("mutual_funds.id"), nullable=False)
+    stock = Column(String, nullable=False)
     overlap_percentage = Column(Numeric(5,2), nullable=False)
