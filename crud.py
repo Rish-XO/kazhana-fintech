@@ -123,3 +123,50 @@ async def get_performance_summary(db: AsyncSession, timeframe: str) -> Dict[str,
         "initial_investment_value": round(initial_value, 2),
         "history": history,
     }
+
+
+# Get Sector Allocation API
+async def get_sector_allocation(db: AsyncSession) -> List[Dict[str, Any]]:
+    # Fetch outer sector allocations
+    sector_query = await db.execute(
+        select(
+            FundAllocation.sector,
+            func.sum(FundAllocation.sector_amount).label("total_amount"),
+            func.sum(FundAllocation.sector_percentage).label("total_percentage"),
+        ).group_by(FundAllocation.sector)
+    )
+    sectors = sector_query.fetchall()
+
+    # Fetch sub-sector allocations (stocks in each sector)
+    sub_sector_query = await db.execute(
+        select(
+            FundAllocation.sector,
+            FundAllocation.stock,
+            FundAllocation.stock_percentage,
+            FundAllocation.sector_amount
+        )
+    )
+    sub_sector_data = sub_sector_query.fetchall()
+
+    # Organize data into expected response format
+    sector_allocation = []
+    sub_sector_map = {}
+
+    for sector, stock, stock_percentage, sector_amount in sub_sector_data:
+        if sector not in sub_sector_map:
+            sub_sector_map[sector] = []
+        sub_sector_map[sector].append({
+            "name": stock,
+            "percentage": float(stock_percentage),
+            "amount": float(sector_amount)
+        })
+
+    for sector, total_amount, total_percentage in sectors:
+        sector_allocation.append({
+            "name": sector,
+            "amount": float(total_amount),
+            "percentage": float(total_percentage),
+            "sub_allocations": sub_sector_map.get(sector, [])  # Attach sub-sector data
+        })
+
+    return sector_allocation
