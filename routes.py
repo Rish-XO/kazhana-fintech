@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from crud import get_mutual_funds,get_fund_allocations, get_fund_overlaps, get_investment_overview, get_performance_summary,get_sector_allocation
+from crud import get_mutual_funds,get_fund_allocations, get_fund_overlaps, get_investment_overview, get_performance_summary,get_sector_allocation,get_fund_overlap_data
 from schemas import MutualFundResponse, FundAllocationResponse, FundOverlapResponse
 from typing import Dict,List, Any 
 
@@ -34,3 +34,10 @@ async def fetch_performance_summary(
 @router.get("/sector_allocation", response_model=List[Dict[str, Any]])
 async def fetch_sector_allocation(db: AsyncSession = Depends(get_db)):
     return await get_sector_allocation(db)
+
+@router.get("/fund_overlap", response_model=Dict[str, Any])
+async def fetch_fund_overlap(db: AsyncSession = Depends(get_db)):
+    """
+    API to get fund-stock overlap data for Sankey chart
+    """
+    return await get_fund_overlap_data(db)

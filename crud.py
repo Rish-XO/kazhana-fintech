@@ -1,7 +1,7 @@
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
-from models import MutualFund, FundAllocation, FundOverlap
+from models import MutualFund, FundAllocation, FundOverlap, FundStockOverlap
 from typing import List, Dict, Any, Optional
 from datetime import date, timedelta,datetime
 import decimal
@@ -170,3 +170,59 @@ async def get_sector_allocation(db: AsyncSession) -> List[Dict[str, Any]]:
         })
 
     return sector_allocation
+
+async def get_fund_overlap_data(db: AsyncSession) -> Dict[str, Any]:
+    """
+    Fetch fund-to-stock overlap data for the Sankey chart.
+    """
+
+    # Fetch all mutual fund details
+    fund_query = await db.execute(select(MutualFund.id, MutualFund.name))
+    fund_results = fund_query.fetchall()
+    fund_map = {fund_id: name for fund_id, name in fund_results}
+
+    # Fetch stock overlaps (each entry is a fund linked to a stock)
+    overlap_query = await db.execute(
+        select(
+            FundStockOverlap.fund_1_id,
+            FundStockOverlap.fund_2_id,
+            FundStockOverlap.stock,
+            FundStockOverlap.overlap_percentage
+        )
+    )
+    overlap_results = overlap_query.fetchall()
+
+    # Prepare nodes (Funds + Unique Stocks)
+    nodes = []
+    node_map = {}  # Lookup index of each node in the list
+    next_index = 0
+
+    # Add funds to nodes first
+    for fund_id, fund_name in fund_map.items():
+        nodes.append({"name": fund_name})
+        node_map[fund_name] = next_index
+        next_index += 1
+
+    # Add stocks dynamically if they are referenced in overlaps
+    stock_map = {}  # Track stocks already added
+    for _, _, stock, _ in overlap_results:
+        if stock not in stock_map:
+            nodes.append({"name": stock})
+            stock_map[stock] = next_index
+            node_map[stock] = next_index  # Add stock to lookup map
+            next_index += 1
+
+    # Prepare links (Funds → Stocks based on overlap %)
+    links = []
+    for fund_1_id, fund_2_id, stock, overlap_percentage in overlap_results:
+        fund_1_name = fund_map.get(fund_1_id)
+        fund_2_name = fund_map.get(fund_2_id)
+        stock_index = node_map.get(stock)
+
+        # Ensure valid mappings exist before adding links
+        if fund_1_name in node_map and stock_index is not None:
+            links.append({"source": node_map[fund_1_name], "target": stock_index, "value": float(overlap_percentage)})
+        if fund_2_name in node_map and stock_index is not None:
+            links.append({"source": node_map[fund_2_name], "target": stock_index, "value": float(overlap_percentage)})
+
+    return {"nodes": nodes, "links": links}
