@@ -2,6 +2,12 @@ from pydantic import BaseModel
 from datetime import date
 from typing import Optional
 
+class InvestmentOverviewResponse(BaseModel):
+    current_investment_value: float
+    initial_investment_value: float
+    best_performing_scheme: str
+    worst_performing_scheme: str
+
 class MutualFundResponse(BaseModel):
     id: int
     name: str
