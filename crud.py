@@ -53,9 +53,15 @@ async def get_investment_overview(db: AsyncSession) -> Dict[str, Any]:
     worst_fund_name: Optional[str] = worst_performing_fund[0] if worst_performing_fund else "N/A"
     worst_fund_return: float = round(worst_performing_fund[1], 2) if worst_performing_fund else 0.0
 
+    # initial investment percentage calculation
+    overall_return_percentage = (
+    ((current_value - initial_value) / initial_value) * 100 if initial_value != 0 else 0
+)
+
     return {
         "current_investment_value": round(current_value, 2),
         "initial_investment_value": round(initial_value, 2),
+         "initial_investment_growth": round(overall_return_percentage, 2),  
         "best_performing_scheme": {
             "name": best_fund_name,
             "returns": best_fund_return
