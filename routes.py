@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from crud import get_mutual_funds,get_fund_allocations, get_fund_overlaps, get_investment_overview
+from crud import get_mutual_funds,get_fund_allocations, get_fund_overlaps, get_investment_overview, get_performance_summary
 from schemas import MutualFundResponse, FundAllocationResponse, FundOverlapResponse
+from typing import Dict, Any 
 
 router = APIRouter(prefix="", tags=["mutual-funds"])
 
@@ -18,8 +19,12 @@ async def fetch_fund_allocations(fund_id: int, db: AsyncSession = Depends(get_db
 async def fetch_fund_overlaps(db: AsyncSession = Depends(get_db)):
     return await get_fund_overlaps(db)
 
-
 @router.get("/investment_overview")
 async def fetch_investment_overview(db: AsyncSession = Depends(get_db)):
     print("Investment overview endpoint called")
     return await get_investment_overview(db)
+
+@router.get("/performance_summary", response_model=Dict[str, Any])
+async def fetch_performance_summary(db: AsyncSession = Depends(get_db)):
+    return await get_performance_summary(db)
+
