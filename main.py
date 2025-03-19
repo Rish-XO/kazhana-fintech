@@ -16,14 +16,10 @@ async def startup():
 
 app.include_router(router)
 
-ALLOWED_ORIGINS = [
-    "http://localhost:5173", 
-    "https://kazhana-frontend-2ing1xxof-rishals-projects-33f18604.vercel.app"  
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
