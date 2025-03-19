@@ -18,7 +18,7 @@ class MutualFundResponse(BaseModel):
     returns_percentage: float
 
     class Config:
-        from_attributes = True  # Updated for Pydantic v2 (previously orm_mode)
+        from_attributes = True  
 
 class FundAllocationResponse(BaseModel):
     fund_id: int
@@ -27,9 +27,8 @@ class FundAllocationResponse(BaseModel):
     stock: str
     stock_percentage: float
     market_cap: str
-    sector_amount: Optional[float] = None  # Added sector amount for frontend requirement
-    sub_sector: Optional[str] = None  # Added optional sub-sector field
-
+    sector_amount: Optional[float] = None 
+    sub_sector: Optional[str] = None  
     class Config:
         from_attributes = True
 

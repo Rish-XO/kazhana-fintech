@@ -8,7 +8,6 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("SUPABASE_DATABASE_URL")
 
-# Ensure it uses `asyncpg`
 if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
