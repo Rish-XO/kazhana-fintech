@@ -18,7 +18,7 @@ app.include_router(router)
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173", 
-    "https://tight-kimmy-rishalxoxo-e2aa0e33.koyeb.app"  
+    "https://kazhana-frontend-2ing1xxof-rishals-projects-33f18604.vercel.app"  
 ]
 
 app.add_middleware(
