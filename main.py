@@ -1,3 +1,5 @@
+import os
+import uvicorn
 from fastapi import FastAPI
 from database import engine
 from models import Base
@@ -16,3 +18,7 @@ app.include_router(router)
 @app.get("/")
 async def root():
     return {"message": "API is running!"}
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5000))  # Ensure it runs on Koyeb's default port
+    uvicorn.run(app, host="0.0.0.0", port=port)
